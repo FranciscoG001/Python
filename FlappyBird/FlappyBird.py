@@ -24,10 +24,10 @@ pipePos_x = width
 pipePos_x2 = width * 2
 
 # Start coords
-upPipPos_y = -350
-upPipPos_y2 = -250
-downPipPos_y = 500
-downPipPos_y2 = 600
+upPipPos_y = -370
+upPipPos_y2 = -270
+downPipPos_y = 520
+downPipPos_y2 = 620
 
 # To random pipes
 upPipPos_y_min = -250
@@ -121,12 +121,12 @@ while running:
         # Reset Pip
         if pipePos_x + upPipeResizeImage.get_width() < -50:
             upPipPos_y = random.randint(upPipPos_y_max,upPipPos_y_min) # New position
-            downPipPos_y = upPipPos_y + 850
+            downPipPos_y = upPipPos_y + 890
             pipePos_x = width
         # Reset Pip2
         if pipePos_x2 + upPipeResizeImage2.get_width() < -50:
             upPipPos_y2 = random.randint(upPipPos_y_max,upPipPos_y_min) # New position
-            downPipPos_y2 = upPipPos_y2 + 850
+            downPipPos_y2 = upPipPos_y2 + 890
             pipePos_x2 = width
 
         # Ground Touch
@@ -149,14 +149,20 @@ while running:
             passagem_registrada2 = False
 
         # Touch Pipes
+        bird_rect = pygame.Rect(bird_x+13, bird_y+20, birdResizeImage.get_width()-23, birdResizeImage.get_height()-39)
+        up_pipe_rect = pygame.Rect(pipePos_x, 0, width/7, upPipPos_y+720)
+        down_pipe_rect = pygame.Rect(pipePos_x, upPipPos_y + 890, width/7, height)
+        up_pipe_rect2 = pygame.Rect(pipePos_x2, 0, width/7, upPipPos_y2+720)
+        down_pipe_rect2 = pygame.Rect(pipePos_x2, upPipPos_y2 + 890, width/7, height)
 
+        # Pipes 1
+        if bird_rect.colliderect(up_pipe_rect) or bird_rect.colliderect(down_pipe_rect):
+            start = False
+        # Pipes 2
+        if bird_rect.colliderect(up_pipe_rect2) or bird_rect.colliderect(down_pipe_rect2):
+            start = False
         
-
-        
-        
-
     pygame.display.flip() # Update Screen
     clock.tick(60) # FPS to 60
 
 pygame.quit()
-
