@@ -4,16 +4,66 @@ import numpy as np
 from keras.models import Sequential
 from keras.layers import Dense
 import openpyxl
+import tensorflow as tf
+import contextlib
+import sys
+import os
+# Redirecione a saída padrão para um arquivo de log vazio
+f = open(os.devnull, 'w')
+sys.stdout = f
 
 
-# Create New Excel
-workbook = openpyxl.Workbook()
+"""def addValuesToExcel(valuesToExcel):
+    # Get next row
+    row = sheet.max_row + 1
+    # Add data do Excel
+    sheet[f"A{row}"] = valuesToExcel[0]
+    sheet[f"B{row}"] = valuesToExcel[1]
+    sheet[f"C{row}"] = valuesToExcel[2]
+    sheet[f"D{row}"] = valuesToExcel[3]
+    sheet[f"E{row}"] = valuesToExcel[4]
+    sheet[f"F{row}"] = valuesToExcel[5]
+    sheet[f"G{row}"] = valuesToExcel[6]
+    sheet[f"H{row}"] = valuesToExcel[7]
+    sheet[f"I{row}"] = valuesToExcel[8]
+    sheet[f"J{row}"] = valuesToExcel[9]
+    sheet[f"K{row}"] = valuesToExcel[10]
+    sheet[f"L{row}"] = valuesToExcel[11]
+    sheet[f"M{row}"] = valuesToExcel[12]
+    sheet[f"N{row}"] = valuesToExcel[13]
+    sheet[f"O{row}"] = valuesToExcel[14]"""
 
-# Select Sheet
+model = Sequential()
+model.add(Dense(16, input_dim=14, activation='relu'))  # Ajuste o número de entradas conforme necessário
+model.add(Dense(1, activation='sigmoid'))  # Saída binária para pular ou não
+
+# Compile o modelo
+model.compile(loss='binary_crossentropy', optimizer='adam')
+
+workbook = openpyxl.load_workbook('FlappyBirdData.xlsx')
 sheet = workbook.active
 
+training_data = []
+labels = []
+
+for row in sheet.iter_rows(min_row=2, values_only=True):  # Comece da segunda linha para evitar o cabeçalho
+    tick, lost, centerXBird, centeryBird, widthBird, heightBird, valLeftXFirstPipe, valRightXFirstPipe, valY_pos_up_pipe, valY_pos_down_pipe, valLeftXSecondPipe, valRightXSecondPipe, valY_pos_up_pipe2, valY_pos_down_pipe2, jump = row
+
+    # Adicione esses dados à lista de dados de treinamento
+    data_point = [tick, lost, centerXBird, centeryBird, widthBird, heightBird, valLeftXFirstPipe, valRightXFirstPipe, valY_pos_up_pipe, valY_pos_down_pipe, valLeftXSecondPipe, valRightXSecondPipe, valY_pos_up_pipe2, valY_pos_down_pipe2]
+    training_data.append(data_point)
+
+    # Adicione o rótulo (ação de pular) à lista de rótulos
+    labels.append(jump)
+
+# Create New Excel
+#workbook = openpyxl.Workbook()
+
+# Select Sheet
+#sheet = workbook.active
+
 # Add Colluns
-sheet["A1"] = "Tick"
+"""sheet["A1"] = "Tick"
 sheet["B1"] = "Lost"
 sheet["C1"] = "CenterXBird"
 sheet["D1"] = "CenterYBird"
@@ -27,7 +77,7 @@ sheet["K1"] = "ValLeftXSecondPipe"
 sheet["L1"] = "ValRightXSecondPipe"
 sheet["M1"] = "ValYSecondUpPipe"
 sheet["N1"] = "ValYSecondDownPipe"
-sheet["O1"] = "Jump"
+sheet["O1"] = "Jump"""
 
 # Init setup vars
 width = 640
@@ -131,6 +181,9 @@ while running:
     screen.blit(playButtonResizeImage,((width/2)-60,(height/2)-130))
 
     if start:
+        
+        model.fit(np.array(training_data), np.array(labels), epochs=1, verbose=0)
+
         # Count Ticks
         tick += 1
 
@@ -230,35 +283,21 @@ while running:
         centeryBird = bird_rect.centery
         
         # Array with all necessary data to Machine Learning
-        valuesToExcel = [tick,lost,centerXBird,centeryBird,widthBird,heightBird,
-                         valLeftXFirstPipe, valRightXFirstPipe, valY_pos_up_pipe,
-                         valY_pos_down_pipe, valLeftXSecondPipe, valRightXSecondPipe,
-                         valY_pos_up_pipe2, valY_pos_down_pipe2, jump]
+        valuesToExcel = [tick,lost,centerXBird,centeryBird,widthBird,heightBird,valLeftXFirstPipe, valRightXFirstPipe, valY_pos_up_pipe,valY_pos_down_pipe, valLeftXSecondPipe, valRightXSecondPipe,valY_pos_up_pipe2, valY_pos_down_pipe2]
         
-        # Get next row
-        row = sheet.max_row + 1
-        # Add data do Excel
-        sheet[f"A{row}"] = valuesToExcel[0]
-        sheet[f"B{row}"] = valuesToExcel[1]
-        sheet[f"C{row}"] = valuesToExcel[2]
-        sheet[f"D{row}"] = valuesToExcel[3]
-        sheet[f"E{row}"] = valuesToExcel[4]
-        sheet[f"F{row}"] = valuesToExcel[5]
-        sheet[f"G{row}"] = valuesToExcel[6]
-        sheet[f"H{row}"] = valuesToExcel[7]
-        sheet[f"I{row}"] = valuesToExcel[8]
-        sheet[f"J{row}"] = valuesToExcel[9]
-        sheet[f"K{row}"] = valuesToExcel[10]
-        sheet[f"L{row}"] = valuesToExcel[11]
-        sheet[f"M{row}"] = valuesToExcel[12]
-        sheet[f"N{row}"] = valuesToExcel[13]
-        sheet[f"O{row}"] = valuesToExcel[14]
+        # Use o modelo para tomar decisões
+        prediction = model.predict(np.array([valuesToExcel]))
+
+        if prediction > 0.5:
+            # Fazer o pássaro pular
+            velBird = impulse
+        #addValuesToExcel(valuesToExcel)
         
     pygame.display.flip() # Update Screen
     clock.tick(60) # FPS to 60
 
 # Save data and close the excel file
-workbook.save("FlappyBirdData.xlsx")
-workbook.close()
+#workbook.save("FlappyBirdData.xlsx")
+#workbook.close()
 
 pygame.quit()
