@@ -1,9 +1,40 @@
 import pygame
 import random
+import numpy as np
+from keras.models import Sequential
+from keras.layers import Dense
+import openpyxl
+
+
+# Create New Excel
+workbook = openpyxl.Workbook()
+
+# Select Sheet
+sheet = workbook.active
+
+# Add Colluns
+sheet["A1"] = "Tick"
+sheet["B1"] = "Lost"
+sheet["C1"] = "CenterXBird"
+sheet["D1"] = "CenterYBird"
+sheet["E1"] = "WidthBird"
+sheet["F1"] = "HeightBird"
+sheet["G1"] = "ValLeftXFirstPipe"
+sheet["H1"] = "ValRightXFirstPipe"
+sheet["I1"] = "ValYFirstUpPipe"
+sheet["J1"] = "ValYFirstDownPipe"
+sheet["K1"] = "ValLeftXSecondPipe"
+sheet["L1"] = "ValRightXSecondPipe"
+sheet["M1"] = "ValYSecondUpPipe"
+sheet["N1"] = "ValYSecondDownPipe"
+sheet["O1"] = "Jump"
 
 # Init setup vars
 width = 640
 height = 720
+tick = 0
+lost = False
+jump = False
 
 running = True
 start = False
@@ -74,6 +105,9 @@ while running:
         elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_RETURN:
                 start = True # Start game
+                tick = 0
+                lost = False
+                jump = False
                 bird_x = (width/2)-20
                 bird_y = height / 2
                 velBird = 0  
@@ -84,8 +118,12 @@ while running:
                 displayText = font.render(str(countPoints), True, textColor)
             if event.key == pygame.K_SPACE:
                 velBird = impulse # Bird Jump
+                jump = True
             if event.key == pygame.K_ESCAPE:
                 start = False # Stop Game
+        elif event.type == pygame.KEYUP:
+            if event.key == pygame.K_SPACE:
+                jump = False
     
     screen.blit(backgroundResizeImage,(0,0))
     screen.blit(flappyBirdTextResizeImage,(0,0))
@@ -93,7 +131,9 @@ while running:
     screen.blit(playButtonResizeImage,((width/2)-60,(height/2)-130))
 
     if start:
-        
+        # Count Ticks
+        tick += 1
+
         # Pips Move Velocity
         pipePos_x -= velocityPipeMove
         pipePos_x2 -= velocityPipeMove
@@ -132,6 +172,11 @@ while running:
         # Ground Touch
         if bird_y > 600:
             start = False
+            lost = True
+        # Sky Touch
+        if bird_y < 0:
+            start = False
+            lost = True
 
         # Count Pip
         if bird_x > pipePos_x + upPipeResizeImage.get_width() and not passagem_registrada:
@@ -158,11 +203,62 @@ while running:
         # Pipes 1
         if bird_rect.colliderect(up_pipe_rect) or bird_rect.colliderect(down_pipe_rect):
             start = False
+            lost = True
         # Pipes 2
         if bird_rect.colliderect(up_pipe_rect2) or bird_rect.colliderect(down_pipe_rect2):
             start = False
+            lost = True
+            
+        # First pipes
+        valLeftXFirstPipe = up_pipe_rect.bottomleft[0]
+        valRightXFirstPipe = up_pipe_rect.bottomright[0]
+
+        valY_pos_up_pipe = up_pipe_rect.bottomleft[1]
+        valY_pos_down_pipe = down_pipe_rect.topleft[1]
+
+        # Second pipes
+        valLeftXSecondPipe = up_pipe_rect2.bottomleft[0]
+        valRightXSecondPipe = up_pipe_rect2.bottomright[0]
+
+        valY_pos_up_pipe2 = up_pipe_rect2.bottomleft[1]
+        valY_pos_down_pipe2 = down_pipe_rect2.topleft[1]
+
+        #Bird Data
+        widthBird = bird_rect.right - bird_rect.left
+        heightBird = bird_rect.bottom - bird_rect.top
+        centerXBird = bird_rect.centerx
+        centeryBird = bird_rect.centery
+        
+        # Array with all necessary data to Machine Learning
+        valuesToExcel = [tick,lost,centerXBird,centeryBird,widthBird,heightBird,
+                         valLeftXFirstPipe, valRightXFirstPipe, valY_pos_up_pipe,
+                         valY_pos_down_pipe, valLeftXSecondPipe, valRightXSecondPipe,
+                         valY_pos_up_pipe2, valY_pos_down_pipe2, jump]
+        
+        # Get next row
+        row = sheet.max_row + 1
+        # Add data do Excel
+        sheet[f"A{row}"] = valuesToExcel[0]
+        sheet[f"B{row}"] = valuesToExcel[1]
+        sheet[f"C{row}"] = valuesToExcel[2]
+        sheet[f"D{row}"] = valuesToExcel[3]
+        sheet[f"E{row}"] = valuesToExcel[4]
+        sheet[f"F{row}"] = valuesToExcel[5]
+        sheet[f"G{row}"] = valuesToExcel[6]
+        sheet[f"H{row}"] = valuesToExcel[7]
+        sheet[f"I{row}"] = valuesToExcel[8]
+        sheet[f"J{row}"] = valuesToExcel[9]
+        sheet[f"K{row}"] = valuesToExcel[10]
+        sheet[f"L{row}"] = valuesToExcel[11]
+        sheet[f"M{row}"] = valuesToExcel[12]
+        sheet[f"N{row}"] = valuesToExcel[13]
+        sheet[f"O{row}"] = valuesToExcel[14]
         
     pygame.display.flip() # Update Screen
     clock.tick(60) # FPS to 60
+
+# Save data and close the excel file
+workbook.save("FlappyBirdData.xlsx")
+workbook.close()
 
 pygame.quit()
